@@ -35,12 +35,12 @@ This repository features a complete automated testing suite for a salon booking 
 
 ## ⚙️ Prerequisites & Environment
 
-| Component | Verified Version | Notes |
-|-----------|------------------|-------|
-| **Node.js** | `v25.6.1` (Supports Node `>= 18.x`) | Tested and verified on `v25.6.1` |
-| **npm** | `11.x`+ | Bundled with Node |
-| **TypeScript** | `v6.0.3` | Installed via `devDependencies` |
-| **Database** | None required for testing | Tests run completely self-contained via `mongodb-memory-server` |
+| Component | Verified Version | Command | Notes |
+|-----------|------------------|---------|-------|
+| **Node.js** | `v25.6.1` | `node -v` | Tested and verified on `v25.6.1` (Supports `>= 18.x`) |
+| **npm** | `11.9.0` | `npm -v` | Tested and verified on `11.9.0` |
+| **TypeScript** | `Version 6.0.3` | `npx tsc -v` | Tested and verified on `Version 6.0.3` |
+| **Database** | None required | N/A | Tests run completely self-contained via `mongodb-memory-server` |
 
 ---
 
@@ -99,15 +99,16 @@ Jest-assignment/
 
 ## 🔐 Environment Configuration
 
-No `.env` file is required to run the test suite—all tests use self-contained memory databases and default fallbacks.
+- **`npm test`**: Needs **no `.env` file** and **no local MongoDB instance running**. The test harness automatically launches an isolated in-memory MongoDB database via `mongodb-memory-server`. On the first run, `mongodb-memory-server` downloads a MongoDB binary once (requires an internet connection); subsequent runs execute entirely offline.
+- **`.env.example`**: Only used for running the local development server (`npm run dev` or `npm start`). It is never needed or read during test execution.
 
-For local development or staging, copy `.env.example` to `.env`:
+For local development or running the dev server, copy `.env.example` to `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-### Environment Variables
+### Environment Variables (Development Server Only)
 
 | Variable | Default Value | Description |
 |----------|---------------|-------------|
@@ -201,7 +202,7 @@ The test architecture is divided into three tiers:
 
 ### 1. Unit Tests (Mock-based)
 - **Files**: `test/controllers/*.test.ts`, `test/middleware/*.test.ts`, `test/routes/*.test.ts`
-- **Count**: 42 tests
+- **Count**: 41 tests
 - **Focus**: Verifies isolated business logic, branch coverage, and error handlers by mocking Mongoose model functions (`find`, `findOne`, `create`, `findById`, `save`) and bcrypt/jwt libraries.
 
 ### 2. Integration Tests (Supertest + In-Memory MongoDB)
@@ -243,12 +244,13 @@ The suite adheres to DRY principles with dedicated helper modules located in `te
 
 ---
 
-## 📌 Assumptions
+## 📌 Assumptions & Architecture Decisions
 
 1. **Salon Business Hours**: Salons operate on strict 24-hour time strings (`"HH:mm"` format, e.g., `"09:00"` to `"18:00"`). Service durations are in minutes. Available slots are evaluated at 30-minute intervals.
 2. **Customer Self-Registration**: Only `customer` accounts can self-register via `POST /api/register`. Stylist and admin accounts must be provisioned via admin seed or administrative endpoints.
 3. **Cancellation Permissions**: A booking can only be cancelled by the customer who created it or by any user with the `admin` role.
-4. **App/Server Decoupling**: `app.ts` exports the Express application without calling `.listen()` or `mongoose.connect()`, allowing Supertest to spin up lightweight ephemeral test instances while `index.ts` handles production startup.
+4. **App/Server Decoupling (`app.ts` & `index.ts`)**: `app.ts` was extracted from `index.ts` so that integration and E2E tests can import the configured Express `app` directly without establishing a real MongoDB database connection or binding to a network port. `index.ts` remains the dedicated entry point for local and production deployment, handling `mongoose.connect()` and `.listen(PORT)`.
+5. **TypeScript Tooling & Version Compatibility**: In `package.json`, `typescript` was updated from `^7.0.2` to `^6.0.3`. The real reason for this change is that **TypeScript version 7.x does not exist on npm** (the latest official published major versions on the npm registry are `5.x` and `6.x-dev`). Attempting to install or build with `^7.0.2` caused npm resolution errors and compiler failures. Aligning to a published version (`^6.0.3`) resolved all type checking and compiler compatibility issues with `@swc/jest` and `tsc`.
 
 ---
 
