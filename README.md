@@ -191,7 +191,7 @@ Time:        ~38s
 ### Test Configuration Details
 
 - **Transformer**: `@swc/jest` compiles TypeScript with CommonJS target for fast, high-performance execution.
-- **Node Options**: `NODE_OPTIONS=--experimental-vm-modules` is configured in `package.json` to enable Node.js runtime compatibility for dynamic imports during MongoDB driver client metadata handshakes.
+- **Node Options**: The test scripts set `NODE_OPTIONS=--experimental-vm-modules`. Without it, the integration and E2E suites time out in the database setup (`beforeAll` in `test/test-utils/setupTestDb.ts`) on Node `v25.6.1`; with it, all 76 tests pass. Node may print an `ExperimentalWarning` about VM Modules when tests run. This is expected and harmless. This was tested only on Node `v25.6.1`.
 - **Run In Band**: `--runInBand` executes test suites sequentially to prevent port/database race conditions.
 
 ---
@@ -250,7 +250,7 @@ The suite adheres to DRY principles with dedicated helper modules located in `te
 2. **Customer Self-Registration**: Only `customer` accounts can self-register via `POST /api/register`. Stylist and admin accounts must be provisioned via admin seed or administrative endpoints.
 3. **Cancellation Permissions**: A booking can only be cancelled by the customer who created it or by any user with the `admin` role.
 4. **App/Server Decoupling (`app.ts` & `index.ts`)**: `app.ts` was extracted from `index.ts` so that integration and E2E tests can import the configured Express `app` directly without establishing a real MongoDB database connection or binding to a network port. `index.ts` remains the dedicated entry point for local and production deployment, handling `mongoose.connect()` and `.listen(PORT)`.
-5. **TypeScript Tooling & Version Compatibility**: In `package.json`, `typescript` was updated from `^7.0.2` to `^6.0.3`. The real reason for this change is that **TypeScript version 7.x does not exist on npm** (the latest official published major versions on the npm registry are `5.x` and `6.x-dev`). Attempting to install or build with `^7.0.2` caused npm resolution errors and compiler failures. Aligning to a published version (`^6.0.3`) resolved all type checking and compiler compatibility issues with `@swc/jest` and `tsc`.
+5. **TypeScript Version**: TypeScript is set to `^6.0.3` in `package.json` (the original project listed `^7.0.2`). `^6.0.3` is the version I developed and tested with, and it works with `@swc/jest`.
 
 ---
 
